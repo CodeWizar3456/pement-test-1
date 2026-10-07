@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayQuick - Secure UPI Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(15, 23, 42, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #3b82f6;
+      --primary-gradient: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: #0b1120;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.4);
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.1) 0%, transparent 50%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+      overflow-x: hidden;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 var(--success-glow); }
+      70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      width: 100%;
+      max-width: 460px;
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--card-border);
+      padding: 36px 28px;
+      text-align: center;
+      position: relative;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    h1, h2 { font-size: 26px; font-weight: 800; color: #ffffff; margin-bottom: 8px; letter-spacing: -0.5px; }
+    p.subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; font-weight: 500; }
+
+    .form-group { text-align: left; margin-bottom: 18px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px; }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      background: var(--input-bg);
+      color: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+    input[type="file"] { padding: 10px 14px; cursor: pointer; }
+
+    .btn-main {
+      width: 100%;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+      transition: all 0.3s ease;
+      margin-top: 8px;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4); }
+    .btn-main:active { transform: translateY(0); }
+    .btn-main:disabled { background: #334155; box-shadow: none; cursor: not-allowed; transform: none; color: #94a3b8; }
+
+    /* Admin Panel Elements */
+    .preview-box { margin: 16px 0; display: none; }
+    .preview-box img { max-width: 180px; max-height: 180px; border-radius: 16px; border: 2px solid var(--primary); padding: 8px; background: white; }
+    .result-box { margin-top: 24px; padding: 16px; background: rgba(11, 17, 32, 0.6); border-radius: 12px; border: 1px dashed var(--primary); display: none; text-align: left; }
+    .link-text { color: var(--primary); font-size: 13px; margin-bottom: 12px; padding: 12px; background: #1e293b; border-radius: 8px; word-break: break-all; }
+    
+    .prev-links-header { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center; }
+    .prev-links-header h3 { font-size: 15px; color: #f8fafc; font-weight: 700; }
+    .refresh-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: var(--text-muted); padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+    .refresh-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .links-list { margin-top: 16px; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+    .links-list::-webkit-scrollbar { width: 4px; }
+    .links-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    .link-item { background: rgba(11, 17, 32, 0.8); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 14px; text-align: left; }
+    .link-item img { width: 54px; height: 54px; border-radius: 10px; background: #fff; padding: 4px; object-fit: contain; }
+    .link-info { flex: 1; overflow: hidden; }
+    .link-info .amount { font-size: 17px; font-weight: 800; color: var(--primary); }
+    .link-info .target-link { font-size: 12px; color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; margin-top: 4px; }
+    .btn-action { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: 0.2s; }
+    .btn-copy { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+    .btn-copy:hover { background: var(--success); color: #fff; }
+    .btn-del { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    .btn-del:hover { background: var(--danger); color: #fff; }
+
+    /* User Checkout Elements */
+    .amount-badge { display: inline-flex; align-items: baseline; gap: 4px; background: rgba(59, 130, 246, 0.1); color: var(--primary); font-size: 38px; font-weight: 800; padding: 10px 32px; border-radius: 999px; border: 1px solid rgba(59, 130, 246, 0.2); margin-bottom: 24px; }
+    .currency { font-size: 22px; font-weight: 600; opacity: 0.8; }
+    
+    .qr-wrapper { background: #ffffff; padding: 16px; border-radius: 20px; display: inline-block; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+    .qr-wrapper img { width: 220px; height: 220px; display: block; object-fit: contain; }
+    
+    .upi-pill-row { display: flex; justify-content: center; gap: 16px; font-size: 13px; color: var(--text-muted); margin-bottom: 28px; font-weight: 600; }
+
+    /* Modern Progress Loader */
+    .loader-container { position: relative; width: 80px; height: 80px; margin: 0 auto 24px; }
+    .circle-loader { width: 100%; height: 100%; border: 4px solid rgba(255, 255, 255, 0.05); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite cubic-bezier(0.55, 0.15, 0.45, 0.85); }
+    .inner-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(59, 130, 246, 0.2); border-radius: 50%; animation: pulseGlow 1.5s infinite; }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .audit-card { background: rgba(11, 17, 32, 0.8); padding: 16px 20px; border-radius: 14px; font-size: 13px; text-align: left; border: 1px solid var(--card-border); margin-top: 24px; color: #cbd5e1; }
+    .audit-card b { color: #fff; }
+
+    /* Animated Checkmark */
+    .success-animation { margin: 0 auto 20px; width: 80px; height: 80px; }
+    .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 3; stroke: #fff; stroke-miterlimit: 10; margin: 0 auto; box-shadow: inset 0px 0px 0px var(--success); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
+    .checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke-miterlimit: 10; stroke: var(--success); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+    .checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
+    
+    @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+    @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 50px var(--success); } }
+
+    .btn-target { display: block; width: 100%; text-decoration: none; background: var(--success); color: white; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; margin-top: 24px; box-shadow: 0 10px 25px var(--success-glow); text-align: center; transition: all 0.3s; animation: pulseGlow 2s infinite; }
+    .btn-target:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.6); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="glass-card animate-fade-in" id="mainContainer">
+
+    <!-- 1. ADMIN PANEL -->
+    <div id="adminView" class="hidden">
+      <div class="brand-pill">⚡ Admin Dashboard</div>
+      <h1>Gateway Config</h1>
+      <p class="subtitle">Create a new payment link by setting the amount, destination URL, and QR code.</p>
+
+      <div class="form-group">
+        <label>Payment Amount (₹):</label>
+        <input type="number" id="adminAmount" placeholder="e.g. 99, 149, 499" required>
+      </div>
+
+      <div class="form-group">
+        <label>Destination URL (After successful payment):</label>
+        <input type="url" id="adminTargetUrl" placeholder="https://t.me/yourchannel or Drive link" required>
+      </div>
+
+      <div class="form-group">
+        <label>Upload QR Code Image:</label>
+        <input type="file" id="adminQrFile" accept="image/*" required>
+      </div>
+
+      <div class="preview-box" id="adminPreviewBox">
+        <img id="adminQrPreview" src="" alt="QR Preview">
+      </div>
+
+      <button id="genBtn" class="btn-main" onclick="playClick(); generatePaymentLink()">Generate Payment Link</button>
+
+      <div class="result-box" id="adminResultBox">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">Share this link with your customers:</p>
+        <div class="link-text" id="finalGeneratedLink"></div>
+        <button class="btn-main" style="background: var(--success); box-shadow: 0 8px 20px var(--success-glow);" onclick="playClick(); copyPaymentLink()">Copy Link</button>
+      </div>
+
+      <div class="prev-links-header">
+        <h3>Active Links</h3>
+        <button class="refresh-btn" onclick="playClick(); loadPreviousLinks()">↻ Refresh</button>
+      </div>
+      <div class="links-list" id="previousLinksList"></div>
+    </div>
+
+    <!-- 2. USER PAYMENT CHECKOUT -->
+    <div id="userView" class="hidden">
+      
+      <div id="loadingScreen">
+        <div class="loader-container">
+          <div class="circle-loader"></div>
+          <div class="inner-circle"></div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 14px; font-weight: 500;">Initializing secure connection...</p>
+      </div>
+
+      <!-- Checkout Form -->
+      <div id="userPaymentFormSection" class="hidden animate-fade-in">
+        <div class="brand-pill">🔒 Secure Checkout</div>
+        <h2>Scan & Pay</h2>
+        <p class="subtitle">Complete your payment using any UPI application.</p>
+
+        <div class="amount-badge">
+          <span class="currency">₹</span>
+          <span id="userDisplayAmount">0.00</span>
+        </div>
+
+        <div class="qr-wrapper">
+          <img id="userDisplayQR" src="" alt="Payment QR Code">
+        </div>
+
+        <div class="upi-pill-row">
+          <span>✓ GPay</span>
+          <span>✓ PhonePe</span>
+          <span>✓ Paytm</span>
+        </div>
+
+        <form id="userPaymentForm">
+          <div class="form-group">
+            <label>Your Email Address:</label>
+            <input type="email" id="userEmail" placeholder="name@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label>12-Digit UTR / UPI Ref Number:</label>
+            <input type="text" id="userUTR" placeholder="Enter 12-digit transaction ID" maxlength="12" pattern="\d{12}" required>
+          </div>
+
+          <button type="submit" id="userSubmitBtn" class="btn-main" onclick="playClick()">Verify Payment</button>
+        </form>
+      </div>
+
+      <!-- Progress / Waiting Screen -->
+      <div id="userWaitingSection" class="hidden animate-fade-in">
+        <div class="loader-container" style="margin-top: 30px;">
+          <div class="circle-loader"></div>
+          <div class="inner-circle"></div>
+        </div>
+        <h2>Verifying Payment...</h2>
+        <p class="subtitle" style="color: var(--primary); font-weight: 600;">This may take a few minutes. Please wait.</p>
+        
+        <div class="audit-card">
+          <p style="margin-bottom: 6px;">• <b>Email:</b> <span id="logEmail"></span></p>
+          <p>• <b>UTR:</b> <span id="logUTR"></span></p>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 20px;">Our automated system is verifying your transaction with the bank.</p>
+      </div>
+
+      <!-- Success Screen -->
+      <div id="userSuccessSection" class="hidden animate-fade-in">
+        <div class="success-animation">
+          <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+        <h2 style="color: var(--success); font-size: 28px;">Payment Successful!</h2>
+        <p class="subtitle">Your transaction has been verified successfully.</p>
+
+        <a id="targetLinkBtn" href="#" target="_blank" class="btn-target" onclick="playClick()">
+          Access Your Content 👉
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ================= WEB AUDIO API (SOUND ENGINE) ================= */
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playClick() {
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playSuccessChime() {
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const playTone = (freq, time, dur) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, time);
+        gain.gain.linearRampToValueAtTime(0, time + dur);
+        osc.start(time);
+        osc.stop(time + dur);
+      };
+      const now = audioCtx.currentTime;
+      playTone(523.25, now, 0.15); // C5
+      playTone(659.25, now + 0.1, 0.15); // E5
+      playTone(783.99, now + 0.2, 0.3); // G5
+      playTone(1046.50, now + 0.3, 0.8); // C6
+    }
+
+    /* ================= CORE LOGIC ================= */
+    const FIREBASE_BASE_URL = "https://pementveryfy-default-rtdb.firebaseio.com";
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkId = urlParams.get('id');
+
+    if (linkId) {
+      document.getElementById('userView').classList.remove('hidden');
+      loadPaymentDetails(linkId);
+    } else {
+      document.getElementById('adminView').classList.remove('hidden');
+      loadPreviousLinks();
+    }
+
+    /* ================= ADMIN LOGIC ================= */
+    let uploadedQrBase64 = "";
+
+    document.getElementById('adminQrFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 800 * 1024) {
+          alert("Please upload an image smaller than 800 KB.");
+          this.value = ""; return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          uploadedQrBase64 = event.target.result;
+          document.getElementById('adminQrPreview').src = uploadedQrBase64;
+          document.getElementById('adminPreviewBox').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    async function generatePaymentLink() {
+      const amount = document.getElementById('adminAmount').value.trim();
+      const targetUrl = document.getElementById('adminTargetUrl').value.trim();
+      const genBtn = document.getElementById('genBtn');
+
+      if (!amount || amount <= 0) { alert("Enter a valid amount."); return; }
+      if (!targetUrl) { alert("Enter a destination URL."); return; }
+      if (!uploadedQrBase64) { alert("Upload a QR Code."); return; }
+
+      genBtn.disabled = true;
+      genBtn.innerText = "Generating...";
+
+      const newLinkId = "pay_" + Math.random().toString(36).substr(2, 9);
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${newLinkId}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, targetUrl, qrImage: uploadedQrBase64, createdAt: Date.now() })
+        });
+        if (res.ok) {
+          const generatedUrl = `${window.location.origin}${window.location.pathname}?id=${newLinkId}`;
+          document.getElementById('finalGeneratedLink').innerText = generatedUrl;
+          document.getElementById('adminResultBox').style.display = 'block';
+          loadPreviousLinks();
+        }
+      } catch (err) {
+        alert("Network Error.");
+      } finally {
+        genBtn.disabled = false;
+        genBtn.innerText = "Generate Payment Link";
+      }
+    }
+
+    function copyPaymentLink() {
+      navigator.clipboard.writeText(document.getElementById('finalGeneratedLink').innerText);
+      alert("Link copied to clipboard!");
+    }
+
+    async function loadPreviousLinks() {
+      const container = document.getElementById('previousLinksList');
+      container.innerHTML = "<p style='font-size: 13px; color: var(--text-muted); padding: 12px;'>Loading...</p>";
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links.json`);
+        const data = await res.json();
+        if (!data || Object.keys(data).length === 0) {
+          container.innerHTML = "<p style='font-size: 13px; color: var(--text-muted); padding: 12px;'>No active links found.</p>";
+          return;
+        }
+        container.innerHTML = "";
+        Object.keys(data).reverse().forEach(k => {
+          const item = data[k];
+          const fullLink = `${window.location.origin}${window.location.pathname}?id=${k}`;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'link-item';
+          itemEl.innerHTML = `
+            <img src="${item.qrImage}" alt="QR">
+            <div class="link-info">
+              <div class="amount">₹${item.amount}</div>
+              <div class="target-link">🔗 ${item.targetUrl || 'No Link'}</div>
+            </div>
+            <button class="btn-action btn-copy" onclick="playClick(); navigator.clipboard.writeText('${fullLink}'); alert('Copied!');">Copy</button>
+            <button class="btn-action btn-del" onclick="playClick(); deleteLink('${k}')">Del</button>
+          `;
+          container.appendChild(itemEl);
+        });
+      } catch (e) { container.innerHTML = "<p style='color: var(--danger);'>Failed to load list.</p>"; }
+    }
+
+    async function deleteLink(id) {
+      if (!confirm("Are you sure you want to permanently delete this link?")) return;
+      await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`, { method: "DELETE" });
+      loadPreviousLinks();
+    }
+
+    /* ================= USER LOGIC ================= */
+    let currentAmount = "0";
+    let targetLinkUrl = "";
+    let activePaymentKey = "";
+    let checkInterval = null;
+
+    async function loadPaymentDetails(id) {
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`);
+        const data = await res.json();
+        if (data && data.qrImage) {
+          currentAmount = data.amount;
+          targetLinkUrl = data.targetUrl || "#";
+          document.getElementById('userDisplayAmount').innerText = currentAmount;
+          document.getElementById('userDisplayQR').src = data.qrImage;
+          document.getElementById('targetLinkBtn').href = targetLinkUrl;
+          document.getElementById('loadingScreen').classList.add('hidden');
+          document.getElementById('userPaymentFormSection').classList.remove('hidden');
+        } else {
+          document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--danger); font-weight: 600;'>This payment link has expired or is invalid.</p>";
+        }
+      } catch (e) {
+        document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--danger);'>Error loading data.</p>";
+      }
+    }
+
+    document.getElementById('userPaymentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('userEmail').value.trim();
+      const utr = document.getElementById('userUTR').value.trim();
+      const submitBtn = document.getElementById('userSubmitBtn');
+
+      if (!/^\d{12}$/.test(utr)) { alert("Please enter a valid 12-digit UTR number."); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Processing securely...";
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments.json`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, utr, amount: currentAmount, status: "PENDING", timestamp: Date.now() })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.name) {
+          activePaymentKey = data.name;
+          document.getElementById('logEmail').innerText = email;
+          document.getElementById('logUTR').innerText = utr;
+
+          document.getElementById('userPaymentFormSection').classList.add('hidden');
+          document.getElementById('userWaitingSection').classList.remove('hidden');
+          startPaymentPolling(activePaymentKey);
+        }
+      } catch (err) {
+        alert("Network Error!");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Verify Payment";
+      }
+    });
+
+    function startPaymentPolling(key) {
+      checkInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments/${key}.json`);
+          const data = await res.json();
+          if (data && data.status === "SUCCESS") {
+            clearInterval(checkInterval);
+            
+            // Trigger Success UI & Sound
+            playSuccessChime();
+            document.getElementById('userWaitingSection').classList.add('hidden');
+            document.getElementById('userSuccessSection').classList.remove('hidden');
+          }
+        } catch (e) { console.error("Polling error", e); }
+      }, 3000); // Checks every 3 seconds
+    }
+  </script>
+</body>
+</html>
