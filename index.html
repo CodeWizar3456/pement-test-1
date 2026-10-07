@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayQuick - Secure UPI Gateway</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-blue: #38bdf8;
+      --accent-gradient: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+      --accent-glow: rgba(37, 99, 235, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: #0b1120;
+      --success: #10b981;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(79, 70, 229, 0.15) 0%, transparent 40%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--card-border);
+      padding: 32px 26px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+    }
+
+    h1, h2 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    p.subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 16px;
+      font-size: 15px;
+      background: var(--input-bg);
+      color: #ffffff;
+      border: 1.5px solid var(--card-border);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+      background: #0f172a;
+    }
+
+    input[type="file"] {
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .btn-main {
+      width: 100%;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      font-size: 15.5px;
+      font-weight: 700;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      transition: all 0.2s ease;
+      margin-top: 4px;
+    }
+
+    .btn-main:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.45);
+    }
+
+    .btn-main:disabled {
+      background: #334155;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      color: #94a3b8;
+    }
+
+    /* Admin Styles */
+    .preview-box {
+      margin: 16px 0;
+      display: none;
+    }
+
+    .preview-box img {
+      max-width: 170px;
+      max-height: 170px;
+      border-radius: 14px;
+      border: 2px solid var(--accent-blue);
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .result-box {
+      margin-top: 22px;
+      padding: 18px;
+      background: rgba(11, 17, 32, 0.85);
+      border-radius: 14px;
+      border: 1px dashed var(--accent-blue);
+      display: none;
+      text-align: left;
+    }
+
+    .link-text {
+      word-break: break-all;
+      color: var(--accent-blue);
+      font-size: 13px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: #1e293b;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    /* Previous Links */
+    .prev-links-header {
+      margin-top: 36px;
+      padding-top: 22px;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .prev-links-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .refresh-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .links-list {
+      margin-top: 14px;
+      max-height: 290px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 4px;
+    }
+
+    .links-list::-webkit-scrollbar {
+      width: 5px;
+    }
+    .links-list::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 10px;
+    }
+
+    .link-item {
+      background: #0b1120;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+    }
+
+    .link-item img {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 3px;
+      object-fit: contain;
+    }
+
+    .link-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .link-info .amount {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent-blue);
+    }
+
+    .link-info .date {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-action {
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-copy {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .btn-copy:hover {
+      background: var(--success);
+      color: #ffffff;
+    }
+
+    .btn-del {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-del:hover {
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    /* User Payment Experience */
+    .amount-badge {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      background: rgba(56, 189, 248, 0.08);
+      color: var(--accent-blue);
+      font-size: 34px;
+      font-weight: 800;
+      padding: 8px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .qr-wrapper {
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .qr-wrapper img {
+      width: 210px;
+      height: 210px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .upi-pill-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    /* Countdown & Waiting Screen */
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.08);
+      border-top: 4px solid var(--accent-blue);
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .timer-badge {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--warning);
+      margin: 12px 0;
+      letter-spacing: 1px;
+    }
+
+    .audit-card {
+      background: #0b1120;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      text-align: left;
+      border: 1px solid var(--card-border);
+      line-height: 1.6;
+      margin-top: 18px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="glass-card">
+
+    <!-- ૧. એડમિન પેનલ (સાદી લિંક પરથી) -->
+    <div id="adminView" class="hidden">
+      <div class="brand-pill">⚡ Admin Dashboard</div>
+      <h1>Create Payment Link</h1>
+      <p class="subtitle">ચોક્કસ રકમ અને કસ્ટમ QR કોડ અપલોડ કરી નવી લિંક બનાવો</p>
+
+      <div class="form-group">
+        <label>પેમેન્ટ રકમ (₹ Amount):</label>
+        <input type="number" id="adminAmount" placeholder="ઉદા. 50, 100, 500" required>
+      </div>
+
+      <div class="form-group">
+        <label>QR કોડ ઈમેજ સિલેક્ટ કરો:</label>
+        <input type="file" id="adminQrFile" accept="image/*" required>
+      </div>
+
+      <div class="preview-box" id="adminPreviewBox">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">અપલોડ કરેલ QR:</p>
+        <img id="adminQrPreview" src="" alt="QR Preview">
+      </div>
+
+      <button id="genBtn" class="btn-main" onclick="generatePaymentLink()">Generate Payment Link</button>
+
+      <div class="result-box" id="adminResultBox">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">ગ્રાહકને મોકલવાની લિંક:</p>
+        <div class="link-text" id="finalGeneratedLink"></div>
+        <button class="btn-main" style="background: var(--success); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);" onclick="copyPaymentLink()">લિંક કોપી કરો</button>
+      </div>
+
+      <!-- અગાઉ બનાવેલી લિંક્સ (Previous Links) -->
+      <div class="prev-links-header">
+        <h3>Previous Links (સક્રિય લિંક્સ)</h3>
+        <button class="refresh-btn" onclick="loadPreviousLinks()">Refresh</button>
+      </div>
+      <div class="links-list" id="previousLinksList">
+        <p style="font-size: 12px; color: var(--text-muted); padding: 12px;">લોડ થઈ રહ્યું છે...</p>
+      </div>
+    </div>
+
+    <!-- ૨. યુઝર પેમેન્ટ પેજ (?id=pay_xxxx પરથી) -->
+    <div id="userView" class="hidden">
+      <div id="loadingScreen">
+        <div class="spinner"></div>
+        <p style="color: var(--text-muted); font-size: 14px;">પેમેન્ટ ડેટા લોડ થઈ રહ્યો છે...</p>
+      </div>
+
+      <div id="userPaymentFormSection" class="hidden">
+        <div class="brand-pill">🔒 Verified UPI Gateway</div>
+        <h2>Scan & Pay</h2>
+        <p class="subtitle">QR કોડ સ્કેન કરી પેમેન્ટ પૂર્ણ કરો</p>
+
+        <div class="amount-badge">
+          <span style="font-size: 20px; font-weight: 600;">₹</span>
+          <span id="userDisplayAmount">0.00</span>
+        </div>
+
+        <div class="qr-wrapper">
+          <img id="userDisplayQR" src="" alt="Payment QR Code">
+        </div>
+
+        <div class="upi-pill-row">
+          <span>✓ Google Pay</span>
+          <span>✓ PhonePe</span>
+          <span>✓ Paytm</span>
+        </div>
+
+        <form id="userPaymentForm">
+          <div class="form-group">
+            <label>તમારો ઈમેલ (Email ID):</label>
+            <input type="email" id="userEmail" placeholder="yourname@gmail.com" required>
+          </div>
+
+          <div class="form-group">
+            <label>૧૨ આંકડાનો UTR / UPI Ref નંબર:</label>
+            <input type="text" id="userUTR" placeholder="12-digit UTR Number" maxlength="12" pattern="\d{12}" required>
+          </div>
+
+          <button type="submit" id="userSubmitBtn" class="btn-main">પેમેન્ટ વેરિફાય કરો</button>
+        </form>
+      </div>
+
+      <!-- ૩. કાઉન્ટડાઉન ટાઈમર સેક્શન -->
+      <div id="userWaitingSection" class="hidden">
+        <div class="spinner"></div>
+        <h2>વેરિફિકેશન ચાલુ છે...</h2>
+        <p class="subtitle">અમારી ઓટોમેટેડ સિસ્ટમ તમારા બેંક ક્રેડિટની પુષ્ટિ કરી રહી છે</p>
+
+        <div class="timer-badge" id="countdownTimer">10:00</div>
+
+        <div class="audit-card">
+          <p>• <b>ઈમેલ:</b> <span id="logEmail"></span></p>
+          <p>• <b>UTR:</b> <span id="logUTR"></span></p>
+          <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 10px 0;">
+          <p style="color: var(--success); font-weight: 600;">✓ પેમેન્ટ કન્ફર્મ થતાં જ તમારા ઈમેલ પર સક્સેસ કન્ફર્મેશન મોકલાઈ જશે. તમે આ પેજ બંધ કરી શકો છો.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const FIREBASE_BASE_URL = "https://pementveryfy-default-rtdb.firebaseio.com";
+
+    // URL માંથી લિંક ID ચકાસો
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkId = urlParams.get('id');
+
+    if (linkId) {
+      document.getElementById('userView').classList.remove('hidden');
+      loadPaymentDetails(linkId);
+    } else {
+      document.getElementById('adminView').classList.remove('hidden');
+      loadPreviousLinks();
+    }
+
+    /* ================= એડમિન પેનલ લોજિક ================= */
+    let uploadedQrBase64 = "";
+
+    document.getElementById('adminQrFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 800 * 1024) {
+          alert("કૃપા કરીને 800 KB થી નાની સાઈઝની ઈમેજ અપલોડ કરો.");
+          this.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          uploadedQrBase64 = event.target.result;
+          document.getElementById('adminQrPreview').src = uploadedQrBase64;
+          document.getElementById('adminPreviewBox').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    async function generatePaymentLink() {
+      const amount = document.getElementById('adminAmount').value.trim();
+      const genBtn = document.getElementById('genBtn');
+
+      if (!amount || amount <= 0) {
+        alert("સાચી રકમ દાખલ કરો.");
+        return;
+      }
+      if (!uploadedQrBase64) {
+        alert("કૃપા કરીને QR કોડ ઈમેજ સિલેક્ટ કરો.");
+        return;
+      }
+
+      genBtn.disabled = true;
+      genBtn.innerText = "લિંક જનરેટ થઈ રહી છે...";
+
+      const newLinkId = "pay_" + Math.random().toString(36).substr(2, 9);
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${newLinkId}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: amount,
+            qrImage: uploadedQrBase64,
+            createdAt: Date.now()
+          })
+        });
+
+        if (res.ok) {
+          const generatedUrl = `${window.location.origin}${window.location.pathname}?id=${newLinkId}`;
+          document.getElementById('finalGeneratedLink').innerText = generatedUrl;
+          document.getElementById('adminResultBox').style.display = 'block';
+          loadPreviousLinks();
+        } else {
+          alert("લિંક બનાવવામાં એરર આવી.");
+        }
+      } catch (err) {
+        alert("નેટવર્ક એરર આવી છે.");
+      } finally {
+        genBtn.disabled = false;
+        genBtn.innerText = "Generate Payment Link";
+      }
+    }
+
+    function copyPaymentLink() {
+      const link = document.getElementById('finalGeneratedLink').innerText;
+      navigator.clipboard.writeText(link);
+      alert("લિંક કોપી થઈ ગઈ!");
+    }
+
+    async function loadPreviousLinks() {
+      const container = document.getElementById('previousLinksList');
+      container.innerHTML = "<p style='font-size: 12px; color: var(--text-muted); padding: 12px;'>લોડ થઈ રહ્યું છે...</p>";
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links.json`);
+        const data = await res.json();
+
+        if (!data || Object.keys(data).length === 0) {
+          container.innerHTML = "<p style='font-size: 12px; color: var(--text-muted); padding: 12px;'>હાલમાં કોઈ લિંક ઉપલબ્ધ નથી.</p>";
+          return;
+        }
+
+        container.innerHTML = "";
+        const keys = Object.keys(data).reverse();
+
+        keys.forEach(k => {
+          const item = data[k];
+          const fullLink = `${window.location.origin}${window.location.pathname}?id=${k}`;
+          const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString() + ' ' + new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+          const itemEl = document.createElement('div');
+          itemEl.className = 'link-item';
+          itemEl.innerHTML = `
+            <img src="${item.qrImage}" alt="QR">
+            <div class="link-info">
+              <div class="amount">₹${item.amount}</div>
+              <div class="date">${dateStr}</div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-action btn-copy" onclick="copySpecificLink('${fullLink}')">Copy</button>
+              <button class="btn-action btn-del" onclick="deleteLink('${k}')">Delete</button>
+            </div>
+          `;
+          container.appendChild(itemEl);
+        });
+
+      } catch (e) {
+        container.innerHTML = "<p style='font-size: 12px; color: var(--danger); padding: 12px;'>લિસ્ટ લાવવામાં એરર આવી.</p>";
+      }
+    }
+
+    function copySpecificLink(url) {
+      navigator.clipboard.writeText(url);
+      alert("લિંક કોપી થઈ ગઈ!");
+    }
+
+    async function deleteLink(id) {
+      if (!confirm("શું તમે ખરેખર આ લિંક કાયમ માટે કાઢી નાખવા માંગો છો?")) return;
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`, {
+          method: "DELETE"
+        });
+
+        if (res.ok) {
+          alert("લિંક સફળતાપૂર્વક ડિલીટ થઈ ગઈ!");
+          loadPreviousLinks();
+        } else {
+          alert("ડિલીટ કરવામાં એરર આવી.");
+        }
+      } catch (e) {
+        alert("નેટવર્ક એરર આવી.");
+      }
+    }
+
+    /* ================= યુઝર પેમેન્ટ લોજિક ================= */
+    let currentAmount = "0";
+
+    async function loadPaymentDetails(id) {
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`);
+        const data = await res.json();
+
+        if (data && data.qrImage) {
+          currentAmount = data.amount;
+          document.getElementById('userDisplayAmount').innerText = currentAmount;
+          document.getElementById('userDisplayQR').src = data.qrImage;
+
+          document.getElementById('loadingScreen').classList.add('hidden');
+          document.getElementById('userPaymentFormSection').classList.remove('hidden');
+        } else {
+          document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--danger);'>આ પેમેન્ટ લિંક એક્સપાયર થઈ ગઈ છે અથવા ડિલીટ કરી દેવામાં આવી છે.</p>";
+        }
+      } catch (e) {
+        document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--danger);'>ડેટા લોડ કરવામાં એરર આવી.</p>";
+      }
+    }
+
+    document.getElementById('userPaymentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('userEmail').value.trim();
+      const utr = document.getElementById('userUTR').value.trim();
+      const submitBtn = document.getElementById('userSubmitBtn');
+
+      if (!/^\d{12}$/.test(utr)) {
+        alert("કૃપા કરીને સાચો ૧૨ આંકડાનો UTR નંબર દાખલ કરો.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "પ્રોસેસ થઈ રહ્યું છે...";
+
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments.json`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email,
+            utr: utr,
+            amount: currentAmount,
+            status: "PENDING",
+            timestamp: Date.now()
+          })
+        });
+
+        if (res.ok) {
+          document.getElementById('logEmail').innerText = email;
+          document.getElementById('logUTR').innerText = utr;
+
+          document.getElementById('userPaymentFormSection').classList.add('hidden');
+          document.getElementById('userWaitingSection').classList.remove('hidden');
+          startTimer(10 * 60);
+        } else {
+          alert("સર્વર એરર આવી છે.");
+          submitBtn.disabled = false;
+          submitBtn.innerText = "પેમેન્ટ વેરિફાય કરો";
+        }
+      } catch (err) {
+        alert("નેટવર્ક એરર આવી છે.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "પેમેન્ટ વેરિફાય કરો";
+      }
+    });
+
+    function startTimer(durationInSeconds) {
+      let timer = durationInSeconds;
+      const timerElement = document.getElementById("countdownTimer");
+      const interval = setInterval(() => {
+        let minutes = parseInt(timer / 60, 10);
+        let seconds = parseInt(timer % 60, 10);
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+        timerElement.textContent = minutes + ":" + seconds;
+        if (--timer < 0) {
+          clearInterval(interval);
+          timerElement.textContent = "00:00";
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
