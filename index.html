@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#060a14">
+<title>PayQuick - Secure UPI Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
+:root{--bg:#060a14;--text-main:#f3eee2;--text-muted:#8e97ac;--gold:#e6c88a;--grad:linear-gradient(135deg,#f3dfae,#d9b068 55%,#b98d43);--line:rgba(255,255,255,.09);--field:rgba(6,9,20,.72);--success:#3ddc97;--success-glow:rgba(61,220,151,.38);--danger:#ff6b7d;--ease:cubic-bezier(.16,1,.3,1);--serif:'Fraunces',Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-main);display:flex;justify-content:center;align-items:center;min-height:100vh;min-height:100dvh;padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit}
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.aurora::before,.aurora::after{content:'';position:absolute;width:55vmax;height:55vmax;border-radius:50%;filter:blur(80px);opacity:.45;animation:drift 22s ease-in-out infinite alternate}
+.aurora::before{background:#0f4c63;top:-22vmax;left:-18vmax}
+.aurora::after{background:#2b2f7a;bottom:-26vmax;right:-22vmax;animation-delay:-11s;opacity:.4}
+body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(70% 60% at 50% 40%,#000,transparent);mask-image:radial-gradient(70% 60% at 50% 40%,#000,transparent)}
+@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinA{to{--a:360deg}}
+@keyframes ripple{from{transform:scale(.5);opacity:.9}to{transform:scale(1.3);opacity:0}}
+.animate-fade-in{animation:fadeInUp .7s var(--ease) both}
+.rise>*{animation:rise .6s var(--ease) both}
+.rise>:nth-child(2){animation-delay:.05s}.rise>:nth-child(3){animation-delay:.1s}.rise>:nth-child(4){animation-delay:.15s}.rise>:nth-child(5){animation-delay:.2s}.rise>:nth-child(n+6){animation-delay:.25s}
+.hidden{display:none!important}
+.glass-card{position:relative;width:100%;max-width:440px;padding:40px 28px 30px;text-align:center;border-radius:28px;background:linear-gradient(180deg,rgba(22,28,48,.74),rgba(9,12,24,.8));-webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%);box-shadow:0 40px 80px -20px rgba(0,0,0,.75),0 0 120px -50px rgba(230,200,138,.35)}
+.glass-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(160deg,rgba(255,255,255,.3),rgba(255,255,255,.03) 40%,rgba(230,200,138,.4));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.glass-card::after{content:'';position:absolute;top:0;left:14%;right:14%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,235,190,.7),transparent)}
+.brand-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;margin-bottom:18px;border-radius:999px;font-size:12.5px;font-weight:600;color:#ecd9ae;background:rgba(230,200,138,.09);border:1px solid rgba(230,200,138,.28)}
+.brand-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success)}
+h1,h2{font-family:var(--serif);font-size:31px;font-weight:600;letter-spacing:-.015em;line-height:1.15;margin-bottom:10px;background:linear-gradient(180deg,#fff,#cfc6b0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.ok-title{background-image:linear-gradient(180deg,#f2fff9,#5fe6ae)}
+p.subtitle{font-size:14.5px;line-height:1.65;color:var(--text-muted);margin-bottom:26px;font-weight:500}
+.foot{margin-top:22px;font-size:12px;line-height:1.6;color:var(--text-muted)}
+.form-group{text-align:left;margin-bottom:18px}
+label{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:600;color:#c5cadb;margin-bottom:9px}
+label em{font-style:normal;font-weight:500;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.field{position:relative}
+.field .pre{position:absolute;left:16px;top:50%;transform:translateY(-50%);font:600 17px var(--serif);color:var(--gold);pointer-events:none}
+.field .pre+input{padding-left:36px}
+input{width:100%;padding:15px 16px;font-size:16px;font-weight:500;color:#fff;background:var(--field);border:1px solid var(--line);border-radius:14px;outline:none;transition:border-color .25s,box-shadow .25s,background .25s}
+input::placeholder{color:#59617a;font-weight:500}
+input:hover{border-color:rgba(255,255,255,.18)}
+input:focus{border-color:var(--gold);background:rgba(8,12,26,.95);box-shadow:0 0 0 4px rgba(230,200,138,.14),0 10px 26px -10px rgba(230,200,138,.45)}
+input[type=file]{padding:10px;cursor:pointer;color:var(--text-muted);font-size:13px}
+input[type=file]::file-selector-button{margin-right:12px;padding:9px 14px;border:0;border-radius:10px;font:700 12.5px 'Manrope',sans-serif;color:#1b1304;background:var(--grad);cursor:pointer}
+#userUTR{font:600 18px var(--serif);letter-spacing:.18em}
+#userUTR::placeholder{font:500 15px 'Manrope',sans-serif;letter-spacing:0}
+.btn-main{position:relative;overflow:hidden;width:100%;margin-top:8px;padding:16px;border:0;border-radius:14px;font-size:15.5px;font-weight:700;color:#1b1304;background:var(--grad);background-size:150% 100%;cursor:pointer;box-shadow:0 12px 30px -10px rgba(217,176,104,.7),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .25s var(--ease),box-shadow .25s,background-position .4s}
+.btn-main::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:left .7s var(--ease)}
+.btn-main:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 18px 36px -10px rgba(217,176,104,.8),inset 0 1px 0 rgba(255,255,255,.55)}
+.btn-main:hover::after{left:120%}
+.btn-main:active{transform:scale(.98)}
+.btn-main:disabled{background:#232a3f;color:#7d86a3;box-shadow:none;cursor:not-allowed;transform:none}
+.btn-main:disabled::after{display:none}
+.btn-ok{background:linear-gradient(135deg,#7cf0c0,#2fbf86);box-shadow:0 12px 28px -10px var(--success-glow),inset 0 1px 0 rgba(255,255,255,.45)}
+.preview-box{margin:4px 0 18px;display:none}
+.preview-box img{width:150px;height:150px;object-fit:contain;padding:10px;background:#fff;border-radius:18px;box-shadow:0 0 0 2px rgba(230,200,138,.7),0 16px 36px -12px rgba(230,200,138,.5);animation:rise .5s var(--ease)}
+.result-box{display:none;margin-top:22px;padding:16px;text-align:left;border-radius:16px;background:rgba(230,200,138,.06);border:1px dashed rgba(230,200,138,.45)}
+.result-box p{font-size:12.5px;font-weight:600;color:var(--text-muted);margin-bottom:10px}
+.link-text{padding:12px 14px;margin-bottom:12px;border-radius:10px;background:rgba(0,0,0,.4);color:#ecd9ae;font:500 12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+.prev-links-header{display:flex;justify-content:space-between;align-items:center;margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+.prev-links-header h3{font:600 18px var(--serif)}
+.refresh-btn{padding:7px 14px;border-radius:999px;font-size:12px;font-weight:600;color:var(--text-muted);background:rgba(255,255,255,.04);border:1px solid var(--line);cursor:pointer;transition:.25s}
+.refresh-btn:hover{color:#fff;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2)}
+.links-list{display:flex;flex-direction:column;gap:12px;margin-top:16px;max-height:320px;overflow-y:auto;padding:2px 4px 2px 0;scrollbar-width:thin;scrollbar-color:#3a4160 transparent}
+.link-item{display:flex;align-items:center;gap:13px;padding:12px;text-align:left;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid var(--line);transition:transform .3s var(--ease),border-color .3s,background .3s;animation:rise .45s var(--ease) both}
+.link-item:hover{transform:translateY(-2px);border-color:rgba(230,200,138,.45);background:rgba(230,200,138,.06)}
+.link-item img{width:52px;height:52px;padding:4px;object-fit:contain;border-radius:11px;background:#fff}
+.link-info{flex:1;min-width:0}
+.link-info .amount{font:600 20px var(--serif);color:#fff}
+.link-info .target-link{margin-top:3px;font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-action{padding:8px 12px;border:0;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-copy{color:#7cf0c0;background:rgba(61,220,151,.12)}.btn-copy:hover{color:#04130d;background:var(--success)}
+.btn-del{color:#ff9aa8;background:rgba(255,107,125,.12)}.btn-del:hover{color:#fff;background:var(--danger)}
+.amt-label{font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:2px}
+.amount-wrap{margin-bottom:24px}
+.amount-badge{display:inline-block;white-space:nowrap;font:600 58px/1.1 var(--serif);letter-spacing:-.03em;background:linear-gradient(180deg,#fff8e4 15%,#e0b96a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.currency{font-size:30px;font-weight:500;margin-right:6px;opacity:.8}
+.qr-wrapper{--a:0deg;display:inline-block;margin-bottom:22px;padding:3px;border-radius:27px;background:conic-gradient(from var(--a),#f3dfae,#2a9db8,#fff3d0,#b98d43,#f3dfae);animation:spinA 6s linear infinite;box-shadow:0 24px 60px -16px rgba(230,200,138,.55)}
+.qr-wrapper>div{position:relative;overflow:hidden;padding:14px;border-radius:24px;background:#fff}
+.qr-wrapper img{display:block;width:216px;height:216px;object-fit:contain}
+.scan{position:absolute;left:0;right:0;top:0;height:46px;background:linear-gradient(180deg,transparent,rgba(217,176,104,.38));border-bottom:2px solid #d9b068;animation:scan 3.2s ease-in-out infinite}
+@keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(520%)}}
+.upi-pill-row{display:flex;justify-content:center;gap:8px;margin-bottom:28px}
+.upi-pill-row span{padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;color:#b8bfd6;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.upi-pill-row b{color:var(--success)}
+.loader-container{position:relative;width:84px;height:84px;margin:0 auto 24px}
+.circle-loader{width:100%;height:100%;border-radius:50%;border:3px solid rgba(255,255,255,.06);border-top-color:var(--gold);border-right-color:#2a9db8;animation:spin 1.1s linear infinite}
+.inner-circle{position:absolute;inset:26px;border-radius:50%;background:rgba(230,200,138,.22)}
+.radar{position:relative;width:132px;height:132px;margin:8px auto 26px;display:grid;place-items:center}
+.radar::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(transparent 0 70%,rgba(230,200,138,.6));animation:spin 2s linear infinite;-webkit-mask:radial-gradient(circle,transparent 38%,#000 40%);mask:radial-gradient(circle,transparent 38%,#000 40%)}
+.radar i{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(230,200,138,.5);animation:ripple 3s ease-out infinite}
+.radar i:nth-child(2){animation-delay:1s}.radar i:nth-child(3){animation-delay:2s}
+.radar svg{position:relative;width:46px;height:46px;stroke:#f3dfae;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 10px rgba(230,200,138,.7))}
+.steps{list-style:none;text-align:left;margin-top:22px}
+.steps li{position:relative;display:flex;align-items:center;gap:14px;padding:9px 0;font-size:14px;font-weight:600;color:#59617a;transition:color .4s}
+.steps li:not(:last-child)::after{content:'';position:absolute;left:11px;top:35px;width:2px;height:calc(100% - 22px);background:rgba(255,255,255,.07)}
+.steps b{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.12);transition:.4s}
+.steps .done{color:#dfe3f2}.steps .done b{background:var(--success);border-color:var(--success)}
+.steps .done b::after{content:'';width:5px;height:9px;border:solid #04130d;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.steps .act{color:#fff}.steps .act b{border-color:rgba(230,200,138,.25);border-top-color:var(--gold);animation:spin .9s linear infinite}
+.bar{height:4px;margin-top:16px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar span{display:block;width:40%;height:100%;border-radius:4px;background:var(--grad);animation:slide 1.6s ease-in-out infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:var(--text-muted)}
+.meta b{color:#ecd9ae;font-variant-numeric:tabular-nums}
+.audit-card{margin-top:22px;padding:4px 18px;text-align:left;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:13px}
+.audit-card p{display:flex;justify-content:space-between;gap:16px;padding:11px 0}
+.audit-card p+p{border-top:1px dashed rgba(255,255,255,.1)}
+.audit-card b{color:var(--text-muted);font-weight:600}
+.audit-card span{color:#fff;font-weight:600;text-align:right;word-break:break-all}
+.success-animation{position:relative;width:96px;height:96px;margin:6px auto 24px}
+.success-animation::before,.success-animation::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--success);animation:ripple 2.4s ease-out 1s 2 both}
+.success-animation::after{animation-delay:1.8s}
+.checkmark{position:relative;width:96px;height:96px;border-radius:50%;display:block;stroke-width:3;stroke:#fff;stroke-miterlimit:10;box-shadow:inset 0 0 0 var(--success);animation:fill .4s ease-in-out .4s forwards,scale .3s ease-in-out .9s both}
+.checkmark__circle{stroke-dasharray:166;stroke-dashoffset:166;stroke:var(--success);fill:none;animation:stroke .6s cubic-bezier(.65,0,.45,1) forwards}
+.checkmark__check{transform-origin:50% 50%;stroke-dasharray:48;stroke-dashoffset:48;animation:stroke .3s cubic-bezier(.65,0,.45,1) .8s forwards}
+@keyframes stroke{to{stroke-dashoffset:0}}
+@keyframes scale{0%,100%{transform:none}50%{transform:scale3d(1.1,1.1,1)}}
+@keyframes fill{to{box-shadow:inset 0 0 0 60px var(--success)}}
+.btn-target{position:relative;overflow:hidden;display:block;width:100%;margin-top:26px;padding:17px;border-radius:14px;text-align:center;text-decoration:none;font-size:16px;font-weight:700;color:#04130d;background:linear-gradient(135deg,#7cf0c0,#2fbf86);box-shadow:0 14px 34px -8px var(--success-glow),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .25s var(--ease)}
+.btn-target::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:shine 1.2s var(--ease) 1.4s 1 both}
+@keyframes shine{to{left:130%}}
+.btn-target:hover{transform:translateY(-2px)}
+.cf{position:fixed;top:38%;left:50%;width:8px;height:12px;border-radius:2px;pointer-events:none;z-index:9;animation:cf 1.6s var(--ease) forwards}
+@keyframes cf{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+@media(max-width:400px){.glass-card{padding:34px 20px 26px}.amount-badge{font-size:48px}h1,h2{font-size:28px}}
+@media(prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="glass-card animate-fade-in" id="mainContainer">
+
+  <!-- 1. ADMIN PANEL -->
+  <div id="adminView" class="hidden rise">
+    <div class="brand-pill">Admin console</div>
+    <h1>Gateway Config</h1>
+    <p class="subtitle">Create a new payment link by setting the amount, destination URL and QR code.</p>
+    <div class="form-group">
+      <label>Payment amount</label>
+      <div class="field"><span class="pre">₹</span><input type="number" id="adminAmount" placeholder="99, 149, 499" required></div>
+    </div>
+    <div class="form-group">
+      <label>Destination URL <em>opens after payment</em></label>
+      <input type="url" id="adminTargetUrl" placeholder="https://t.me/yourchannel or Drive link" required>
+    </div>
+    <div class="form-group">
+      <label>QR code image <em>max 800 KB</em></label>
+      <input type="file" id="adminQrFile" accept="image/*" required>
+    </div>
+    <div class="preview-box" id="adminPreviewBox"><img id="adminQrPreview" src="" alt="QR Preview"></div>
+    <button id="genBtn" class="btn-main" onclick="playClick(); generatePaymentLink()">Generate Payment Link</button>
+    <div class="result-box" id="adminResultBox">
+      <p>Share this link with your customers</p>
+      <div class="link-text" id="finalGeneratedLink"></div>
+      <button class="btn-main btn-ok" onclick="playClick(); copyPaymentLink()">Copy Link</button>
+    </div>
+    <div class="prev-links-header">
+      <h3>Active Links</h3>
+      <button class="refresh-btn" onclick="playClick(); loadPreviousLinks()">↻ Refresh</button>
+    </div>
+    <div class="links-list" id="previousLinksList"></div>
+  </div>
+
+  <!-- 2. USER PAYMENT CHECKOUT -->
+  <div id="userView" class="hidden">
+
+    <div id="loadingScreen">
+      <div class="loader-container"><div class="circle-loader"></div><div class="inner-circle"></div></div>
+      <p style="color:var(--text-muted);font-size:14px;font-weight:500">Initializing secure connection...</p>
+    </div>
+
+    <!-- Checkout Form -->
+    <div id="userPaymentFormSection" class="hidden rise">
+      <div class="brand-pill">Secure checkout</div>
+      <h2>Scan &amp; Pay</h2>
+      <p class="subtitle">Complete your payment using any UPI application.</p>
+      <div class="amount-wrap">
+        <div class="amt-label">Amount payable</div>
+        <div class="amount-badge"><span class="currency">₹</span><span id="userDisplayAmount">0.00</span></div>
+      </div>
+      <div class="qr-wrapper"><div><img id="userDisplayQR" src="" alt="Payment QR Code"><span class="scan"></span></div></div>
+      <div class="upi-pill-row"><span><b>✓</b> GPay</span><span><b>✓</b> PhonePe</span><span><b>✓</b> Paytm</span></div>
+      <form id="userPaymentForm">
+        <div class="form-group">
+          <label>Your email address</label>
+          <input type="email" id="userEmail" placeholder="name@example.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label>UTR / UPI ref number <em id="utrCount">0/12</em></label>
+          <input type="text" id="userUTR" placeholder="Enter 12-digit transaction ID" maxlength="12" pattern="\d{12}" inputmode="numeric" autocomplete="off" required>
+        </div>
+        <button type="submit" id="userSubmitBtn" class="btn-main" onclick="playClick()">Verify Payment</button>
+      </form>
+      <p class="foot">Powered by UPI. Keep your UTR handy after paying.</p>
+    </div>
+
+    <!-- Progress / Waiting Screen -->
+    <div id="userWaitingSection" class="hidden animate-fade-in">
+      <div class="radar"><i></i><i></i><i></i><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h2>Verifying Payment</h2>
+      <p class="subtitle" style="margin-bottom:0">This may take a few minutes. Please wait.</p>
+      <ul class="steps" id="vSteps">
+        <li class="done"><b></b>Payment details received</li>
+        <li class="act"><b></b><span id="vMsg">Contacting UPI network…</span></li>
+        <li><b></b>Confirming &amp; unlocking access</li>
+      </ul>
+      <div class="bar"><span></span></div>
+      <div class="meta"><span>Elapsed <b id="vTime">00:00</b></span><span>Please keep this page open</span></div>
+      <div class="audit-card">
+        <p><b>Email</b><span id="logEmail"></span></p>
+        <p><b>Amount</b><span id="logAmt"></span></p>
+        <p><b>UTR</b><span id="logUTR"></span></p>
+      </div>
+      <p class="foot">Our automated system is verifying your transaction with the bank.</p>
+    </div>
+
+    <!-- Success Screen -->
+    <div id="userSuccessSection" class="hidden animate-fade-in">
+      <div class="success-animation">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+      <h2 class="ok-title">Payment Successful!</h2>
+      <p class="subtitle">Your transaction has been verified successfully.</p>
+      <a id="targetLinkBtn" href="#" target="_blank" rel="noopener" class="btn-target" onclick="playClick()">Access Your Content</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= WEB AUDIO API (SOUND ENGINE) ================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playClick() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+}
+function playSuccessChime() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const playTone = (freq, time, dur) => {
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, time);
+    gain.gain.linearRampToValueAtTime(0, time + dur);
+    osc.start(time); osc.stop(time + dur);
+  };
+  const now = audioCtx.currentTime;
+  playTone(523.25, now, 0.15); playTone(659.25, now + 0.1, 0.15);
+  playTone(783.99, now + 0.2, 0.3); playTone(1046.50, now + 0.3, 0.8);
+}
+
+/* ================= CORE LOGIC ================= */
+const FIREBASE_BASE_URL = "https://pementveryfy-default-rtdb.firebaseio.com";
+const $ = id => document.getElementById(id);
+const linkId = new URLSearchParams(window.location.search).get('id');
+if (linkId) {
+  $('userView').classList.remove('hidden');
+  loadPaymentDetails(linkId);
+} else {
+  $('adminView').classList.remove('hidden');
+  loadPreviousLinks();
+}
+
+/* ================= ADMIN LOGIC ================= */
+let uploadedQrBase64 = "";
+$('adminQrFile').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (file) {
+    if (file.size > 800 * 1024) { alert("Please upload an image smaller than 800 KB."); this.value = ""; return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      uploadedQrBase64 = ev.target.result;
+      $('adminQrPreview').src = uploadedQrBase64;
+      $('adminPreviewBox').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+async function generatePaymentLink() {
+  const amount = $('adminAmount').value.trim();
+  const targetUrl = $('adminTargetUrl').value.trim();
+  const genBtn = $('genBtn');
+  if (!amount || amount <= 0) { alert("Enter a valid amount."); return; }
+  if (!targetUrl) { alert("Enter a destination URL."); return; }
+  if (!uploadedQrBase64) { alert("Upload a QR Code."); return; }
+  genBtn.disabled = true; genBtn.innerText = "Generating...";
+  const newLinkId = "pay_" + Math.random().toString(36).substr(2, 9);
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${newLinkId}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, targetUrl, qrImage: uploadedQrBase64, createdAt: Date.now() })
+    });
+    if (res.ok) {
+      $('finalGeneratedLink').innerText = `${window.location.origin}${window.location.pathname}?id=${newLinkId}`;
+      $('adminResultBox').style.display = 'block';
+      loadPreviousLinks();
+    }
+  } catch (err) {
+    alert("Network Error.");
+  } finally {
+    genBtn.disabled = false; genBtn.innerText = "Generate Payment Link";
+  }
+}
+function copyPaymentLink() {
+  navigator.clipboard.writeText($('finalGeneratedLink').innerText);
+  alert("Link copied to clipboard!");
+}
+async function loadPreviousLinks() {
+  const container = $('previousLinksList');
+  container.innerHTML = "<p style='font-size:13px;color:var(--text-muted);padding:12px'>Loading...</p>";
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links.json`);
+    const data = await res.json();
+    if (!data || Object.keys(data).length === 0) {
+      container.innerHTML = "<p style='font-size:13px;color:var(--text-muted);padding:12px'>No active links found.</p>";
+      return;
+    }
+    container.innerHTML = "";
+    Object.keys(data).reverse().forEach((k, n) => {
+      const item = data[k];
+      const fullLink = `${window.location.origin}${window.location.pathname}?id=${k}`;
+      const itemEl = document.createElement('div');
+      itemEl.className = 'link-item';
+      itemEl.style.animationDelay = (n * 50) + 'ms';
+      itemEl.innerHTML = `
+        <img src="${item.qrImage}" alt="QR">
+        <div class="link-info">
+          <div class="amount">₹${item.amount}</div>
+          <div class="target-link">🔗 ${item.targetUrl || 'No Link'}</div>
+        </div>
+        <button class="btn-action btn-copy" onclick="playClick(); navigator.clipboard.writeText('${fullLink}'); alert('Copied!');">Copy</button>
+        <button class="btn-action btn-del" onclick="playClick(); deleteLink('${k}')">Del</button>`;
+      container.appendChild(itemEl);
+    });
+  } catch (e) { container.innerHTML = "<p style='color:var(--danger)'>Failed to load list.</p>"; }
+}
+async function deleteLink(id) {
+  if (!confirm("Are you sure you want to permanently delete this link?")) return;
+  await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`, { method: "DELETE" });
+  loadPreviousLinks();
+}
+
+/* ================= USER LOGIC ================= */
+let currentAmount = "0", targetLinkUrl = "", activePaymentKey = "", checkInterval = null, uiTimer = null;
+
+async function loadPaymentDetails(id) {
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`);
+    const data = await res.json();
+    if (data && data.qrImage) {
+      currentAmount = data.amount;
+      targetLinkUrl = data.targetUrl || "#";
+      $('userDisplayAmount').innerText = currentAmount;
+      $('userDisplayQR').src = data.qrImage;
+      $('targetLinkBtn').href = targetLinkUrl;
+      $('loadingScreen').classList.add('hidden');
+      $('userPaymentFormSection').classList.remove('hidden');
+    } else {
+      $('loadingScreen').innerHTML = "<p style='color:var(--danger);font-weight:600'>This payment link has expired or is invalid.</p>";
+    }
+  } catch (e) {
+    $('loadingScreen').innerHTML = "<p style='color:var(--danger)'>Error loading data.</p>";
+  }
+}
+
+/* UTR: digits only + live counter (UI only) */
+const utrEl = $('userUTR');
+utrEl.addEventListener('input', () => {
+  utrEl.value = utrEl.value.replace(/\D/g, '').slice(0, 12);
+  $('utrCount').innerText = utrEl.value.length + '/12';
+});
+
+$('userPaymentForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const email = $('userEmail').value.trim();
+  const utr = $('userUTR').value.trim();
+  const submitBtn = $('userSubmitBtn');
+  if (!/^\d{12}$/.test(utr)) { alert("Please enter a valid 12-digit UTR number."); return; }
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Processing securely...";
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, utr, amount: currentAmount, status: "PENDING", timestamp: Date.now() })
+    });
+    const data = await res.json();
+    if (res.ok && data.name) {
+      activePaymentKey = data.name;
+      $('logEmail').innerText = email;
+      $('logUTR').innerText = utr;
+      $('userPaymentFormSection').classList.add('hidden');
+      $('userWaitingSection').classList.remove('hidden');
+      startPaymentPolling(activePaymentKey);
+    }
+  } catch (err) {
+    alert("Network Error!");
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Verify Payment";
+  }
+});
+
+/* Verification screen visuals (UI only): live timer + rotating status text */
+function startUiTimer() {
+  $('logAmt').innerText = '₹' + currentAmount;
+  const t0 = Date.now(), msgs = ['Contacting UPI network…', 'Matching UTR with bank…', 'Validating amount & receiver…', 'Almost there…'];
+  let i = 0;
+  uiTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - t0) / 1000);
+    $('vTime').innerText = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    if (s && s % 4 === 0) { i = Math.min(i + 1, msgs.length - 1); $('vMsg').innerText = msgs[i]; }
+  }, 1000);
+}
+function burst() {
+  const colors = ['#f3dfae', '#d9b068', '#3ddc97', '#2a9db8', '#ffffff'];
+  for (let i = 0; i < 38; i++) {
+    const el = document.createElement('i'), a = Math.random() * 6.28, d = 90 + Math.random() * 190;
+    el.className = 'cf';
+    el.style.cssText = `background:${colors[i % 5]};--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d + 120}px;--r:${Math.random() * 720 - 360}deg`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1700);
+  }
+}
+
+function startPaymentPolling(key) {
+  startUiTimer();
+  checkInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments/${key}.json`);
+      const data = await res.json();
+      if (data && data.status === "SUCCESS") {
+        clearInterval(checkInterval);
+        clearInterval(uiTimer);
+        document.querySelectorAll('#vSteps li').forEach(li => li.className = 'done');
+        setTimeout(() => {
+          // Trigger Success UI & Sound
+          playSuccessChime(); burst();
+          if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+          $('userWaitingSection').classList.add('hidden');
+          $('userSuccessSection').classList.remove('hidden');
+        }, 700);
+      }
+    } catch (e) { console.error("Polling error", e); }
+  }, 3000); // Checks every 3 seconds
+}
+</script>
+</body>
+</html>
