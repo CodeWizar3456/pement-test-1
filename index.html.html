@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PayQuick - Secure UPI Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b14;--surface:#0e1424;--surface2:#131b30;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --text:#f1f5f9;--muted:#8b97ad;--accent:#6366f1;--accent2:#38bdf8;--ok:#22c55e;--okglow:rgba(34,197,94,.35);--bad:#f87171;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100%;display:flex;justify-content:center;align-items:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));
+  overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5}
+body::before,body::after{content:"";position:fixed;width:520px;height:520px;border-radius:50%;filter:blur(120px);opacity:.28;z-index:-1;pointer-events:none}
+body::before{background:var(--accent);top:-200px;left:-160px}
+body::after{background:var(--accent2);bottom:-240px;right:-180px;opacity:.16}
+.card{width:100%;max-width:440px;background:linear-gradient(180deg,rgba(19,27,48,.92),rgba(14,20,36,.92));border:1px solid var(--line);
+  border-radius:28px;padding:34px 28px 28px;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);position:relative;
+  animation:rise .7s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes swap{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.view-in{animation:swap .5s var(--ease) both}
+.hidden{display:none!important}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:800;font-size:16px;box-shadow:0 6px 18px rgba(99,102,241,.45)}
+.brand b{font-size:16px;font-weight:800;letter-spacing:-.2px}
+.tag{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03)}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+h1,h2{font-size:25px;font-weight:800;letter-spacing:-.6px;line-height:1.2;margin-bottom:6px}
+.subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;font-weight:500}
+.form-group{margin-bottom:16px;text-align:left}
+label{display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:8px}
+input{width:100%;padding:14px 16px;font:500 15px 'Manrope',sans-serif;color:var(--text);background:rgba(7,11,20,.7);border:1px solid var(--line);border-radius:14px;outline:none;transition:border-color .25s,box-shadow .25s,background .25s}
+input::placeholder{color:#4b5873}
+input:hover{border-color:var(--line2)}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18);background:rgba(7,11,20,.95)}
+input[type=file]{padding:10px 12px;cursor:pointer;color:var(--muted);font-size:13px}
+input[type=file]::file-selector-button{margin-right:12px;padding:8px 14px;border:0;border-radius:9px;background:rgba(99,102,241,.16);color:#c7d2fe;font:600 13px 'Manrope',sans-serif;cursor:pointer}
+#userUTR{letter-spacing:2px;font-variant-numeric:tabular-nums;font-weight:600}
+.btn-main{width:100%;margin-top:6px;padding:16px;border:0;border-radius:14px;cursor:pointer;color:#fff;font:700 15px 'Manrope',sans-serif;
+  background:linear-gradient(135deg,#6366f1,#4f46e5 55%,#3b82f6);box-shadow:0 10px 26px rgba(79,70,229,.4),inset 0 1px 0 rgba(255,255,255,.22);
+  transition:transform .25s var(--ease),box-shadow .25s,filter .25s;position:relative;overflow:hidden}
+.btn-main::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%)}
+.btn-main:hover:not(:disabled)::after{transform:translateX(120%);transition:transform .7s var(--ease)}
+.btn-main:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 32px rgba(79,70,229,.5)}
+.btn-main:active:not(:disabled){transform:scale(.98)}
+.btn-main:disabled{background:#26304a;box-shadow:none;color:#7c89a4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+/* admin */
+.preview-box{margin:4px 0 16px;display:none;text-align:center}
+.preview-box img{width:150px;height:150px;object-fit:contain;border-radius:16px;background:#fff;padding:8px;border:1px solid var(--line2)}
+.result-box{margin-top:18px;padding:16px;border-radius:16px;border:1px solid rgba(99,102,241,.35);background:rgba(99,102,241,.07);display:none;text-align:left;animation:swap .5s var(--ease)}
+.result-box p{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px}
+.link-text{font-size:13px;font-weight:500;color:#c7d2fe;background:rgba(7,11,20,.7);border-radius:10px;padding:12px;word-break:break-all;margin-bottom:12px}
+.prev-links-header{margin-top:30px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.prev-links-header h3{font-size:15px;font-weight:700}
+.refresh-btn{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);padding:7px 14px;border-radius:10px;font:600 12px 'Manrope',sans-serif;cursor:pointer;transition:.2s}
+.refresh-btn:hover{color:#fff;border-color:var(--line2)}
+.links-list{margin-top:14px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
+.links-list::-webkit-scrollbar{width:4px}.links-list::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
+.empty{font-size:13px;color:var(--muted);padding:14px;text-align:center}
+.link-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:rgba(7,11,20,.6);border:1px solid var(--line);text-align:left;transition:border-color .2s}
+.link-item:hover{border-color:var(--line2)}
+.link-item img{width:50px;height:50px;border-radius:10px;background:#fff;padding:3px;object-fit:contain}
+.link-info{flex:1;min-width:0}
+.link-info .amount{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.link-info .target-link{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.btn-action{padding:8px 12px;border:0;border-radius:9px;font:700 12px 'Manrope',sans-serif;cursor:pointer;transition:.2s}
+.btn-copy{background:rgba(99,102,241,.16);color:#c7d2fe}.btn-copy:hover{background:var(--accent);color:#fff}
+.btn-del{background:rgba(248,113,113,.12);color:var(--bad)}.btn-del:hover{background:#ef4444;color:#fff}
+/* checkout */
+.center{text-align:center}
+.amount-box{text-align:center;margin-bottom:22px;padding:18px;border-radius:20px;background:linear-gradient(135deg,rgba(99,102,241,.14),rgba(56,189,248,.06));border:1px solid rgba(99,102,241,.25)}
+.amount-box small{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px}
+.amount-badge{display:inline-flex;align-items:baseline;gap:4px;font-size:42px;font-weight:800;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+.currency{font-size:24px;font-weight:600;color:#a5b4fc}
+.qr-wrapper{position:relative;display:block;width:fit-content;margin:0 auto 18px;padding:14px;background:#fff;border-radius:22px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.qr-wrapper img{width:208px;height:208px;display:block;object-fit:contain}
+.qr-wrapper .c{position:absolute;width:22px;height:22px;border:3px solid var(--accent);opacity:.9}
+.c.tl{top:-6px;left:-6px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}.c.tr{top:-6px;right:-6px;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+.c.bl{bottom:-6px;left:-6px;border-right:0;border-top:0;border-radius:0 0 0 10px}.c.br{bottom:-6px;right:-6px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.upi-pill-row{display:flex;justify-content:center;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.upi-pill-row span{font-size:12px;font-weight:600;color:#b6c0d4;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.upi-pill-row span::before{content:"✓ ";color:var(--ok)}
+.trust{display:flex;justify-content:center;gap:6px;margin-top:16px;font-size:12px;color:var(--muted);font-weight:500}
+/* loaders */
+.loader-container{position:relative;width:76px;height:76px;margin:0 auto 22px}
+.circle-loader{width:100%;height:100%;border-radius:50%;border:3px solid rgba(255,255,255,.06);border-top-color:var(--accent);border-right-color:var(--accent2);animation:spin 1s linear infinite}
+.inner-circle{position:absolute;inset:22px;border-radius:50%;background:rgba(99,102,241,.25);animation:pulse 1.6s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(.8);opacity:.6}50%{transform:scale(1.1);opacity:1}}
+.audit-card{margin-top:22px;padding:6px 16px;border-radius:16px;background:rgba(7,11,20,.6);border:1px solid var(--line);text-align:left}
+.audit-card p{display:flex;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px;color:var(--muted);font-weight:500}
+.audit-card p+p{border-top:1px solid var(--line)}
+.audit-card b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;word-break:break-all;text-align:right}
+.steps{list-style:none;margin:22px 0 0;text-align:left;display:flex;flex-direction:column;gap:14px}
+.steps li{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;color:#55627d;transition:color .4s}
+.steps .dot{width:22px;height:22px;border-radius:50%;border:2px solid #2a3552;display:grid;place-items:center;font-size:11px;transition:all .4s var(--ease);flex:none}
+.steps li.active{color:var(--text)}.steps li.active .dot{border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.2);animation:pulse 1.4s infinite}
+.steps li.done{color:#b6c0d4}.steps li.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.steps li.done .dot::after{content:"✓"}
+.note{font-size:12px;color:var(--muted);margin-top:20px}
+/* success */
+.success-animation{width:96px;height:96px;margin:6px auto 22px;position:relative}
+.success-animation::before,.success-animation::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--ok);opacity:0;animation:ring 2s var(--ease) .9s infinite}
+.success-animation::after{animation-delay:1.5s}
+@keyframes ring{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+.checkmark{width:96px;height:96px;border-radius:50%;display:block;stroke-width:3;stroke:#fff;stroke-miterlimit:10;box-shadow:inset 0 0 0 var(--ok);animation:fill .4s ease-in-out .4s forwards,scale .35s ease-in-out .9s both}
+.checkmark__circle{stroke-dasharray:166;stroke-dashoffset:166;stroke:var(--ok);fill:none;animation:stroke .6s cubic-bezier(.65,0,.45,1) forwards}
+.checkmark__check{transform-origin:50% 50%;stroke-dasharray:48;stroke-dashoffset:48;animation:stroke .3s cubic-bezier(.65,0,.45,1) .8s forwards}
+@keyframes stroke{to{stroke-dashoffset:0}}
+@keyframes scale{0%,100%{transform:none}50%{transform:scale3d(1.1,1.1,1)}}
+@keyframes fill{to{box-shadow:inset 0 0 0 60px var(--ok)}}
+#userSuccessSection h2{color:var(--ok);font-size:27px}
+.btn-target{display:block;width:100%;margin-top:24px;padding:16px;border-radius:14px;text-align:center;text-decoration:none;color:#fff;font:700 15px 'Manrope',sans-serif;
+  background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 12px 28px var(--okglow),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .25s var(--ease)}
+.btn-target:hover{transform:translateY(-2px)}
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;max-width:90vw;
+  padding:12px 18px;border-radius:14px;font-size:13px;font-weight:600;background:#1b2440;border:1px solid var(--line2);box-shadow:0 14px 40px rgba(0,0,0,.5);transition:all .4s var(--ease);z-index:9}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{border-color:rgba(248,113,113,.5);color:#fecaca}
+@media(max-width:380px){.card{padding:28px 20px 22px;border-radius:24px}.qr-wrapper img{width:180px;height:180px}.amount-badge{font-size:36px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="card" id="mainContainer">
+
+  <!-- 1. ADMIN PANEL -->
+  <div id="adminView" class="hidden view-in">
+    <div class="brand"><div class="logo">P</div><b>PayQuick</b><span class="tag"><i></i>Admin</span></div>
+    <h1>Create payment link</h1>
+    <p class="subtitle">Set the amount, the page customers open after paying, and your UPI QR code.</p>
+    <div class="form-group">
+      <label>Payment Amount (₹)</label>
+      <input type="number" id="adminAmount" placeholder="e.g. 99, 149, 499" inputmode="decimal" required>
+    </div>
+    <div class="form-group">
+      <label>Destination URL (after successful payment)</label>
+      <input type="url" id="adminTargetUrl" placeholder="https://t.me/yourchannel or Drive link" required>
+    </div>
+    <div class="form-group">
+      <label>UPI QR Code Image</label>
+      <input type="file" id="adminQrFile" accept="image/*" required>
+    </div>
+    <div class="preview-box" id="adminPreviewBox"><img id="adminQrPreview" src="" alt="QR Preview"></div>
+    <button id="genBtn" class="btn-main" onclick="playClick(); generatePaymentLink()">Generate Payment Link</button>
+    <div class="result-box" id="adminResultBox">
+      <p>Share this link with your customers</p>
+      <div class="link-text" id="finalGeneratedLink"></div>
+      <button class="btn-main" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 10px 24px var(--okglow);margin-top:0" onclick="playClick(); copyPaymentLink()">Copy Link</button>
+    </div>
+    <div class="prev-links-header">
+      <h3>Active Links</h3>
+      <button class="refresh-btn" onclick="playClick(); loadPreviousLinks()">↻ Refresh</button>
+    </div>
+    <div class="links-list" id="previousLinksList"></div>
+  </div>
+
+  <!-- 2. USER PAYMENT CHECKOUT -->
+  <div id="userView" class="hidden">
+
+    <div id="loadingScreen" class="center view-in">
+      <div class="loader-container" style="margin-top:20px"><div class="circle-loader"></div><div class="inner-circle"></div></div>
+      <p style="color:var(--muted);font-size:14px;font-weight:500;margin-bottom:10px">Setting up your secure checkout…</p>
+    </div>
+
+    <!-- Checkout Form -->
+    <div id="userPaymentFormSection" class="hidden view-in">
+      <div class="brand"><div class="logo">P</div><b>PayQuick</b><span class="tag"><i></i>Secure</span></div>
+      <h2>Scan &amp; pay</h2>
+      <p class="subtitle">Pay with any UPI app, then enter your reference number below.</p>
+      <div class="amount-box">
+        <small>Amount to pay</small>
+        <div class="amount-badge"><span class="currency">₹</span><span id="userDisplayAmount">0.00</span></div>
+      </div>
+      <div class="qr-wrapper">
+        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+        <img id="userDisplayQR" src="" alt="Payment QR Code">
+      </div>
+      <div class="upi-pill-row"><span>GPay</span><span>PhonePe</span><span>Paytm</span></div>
+      <form id="userPaymentForm">
+        <div class="form-group">
+          <label>Your email address</label>
+          <input type="email" id="userEmail" placeholder="name@example.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label>12-digit UTR / UPI reference number</label>
+          <input type="text" id="userUTR" placeholder="000000000000" maxlength="12" pattern="\d{12}" inputmode="numeric" autocomplete="off" required>
+        </div>
+        <button type="submit" id="userSubmitBtn" class="btn-main" onclick="playClick()">Verify Payment</button>
+      </form>
+      <div class="trust center">🔒 Encrypted &amp; verified automatically</div>
+    </div>
+
+    <!-- Waiting -->
+    <div id="userWaitingSection" class="hidden center view-in">
+      <div class="loader-container" style="margin-top:14px"><div class="circle-loader"></div><div class="inner-circle"></div></div>
+      <h2>Verifying payment</h2>
+      <p class="subtitle" style="margin-bottom:0">This can take a few minutes. Please keep this page open.</p>
+      <ul class="steps" id="verifySteps">
+        <li class="done"><span class="dot"></span>Payment details received</li>
+        <li class="active"><span class="dot"></span>Checking transaction with the bank</li>
+        <li><span class="dot"></span>Confirming your payment</li>
+      </ul>
+      <div class="audit-card">
+        <p>Email <b id="logEmail"></b></p>
+        <p>UTR <b id="logUTR"></b></p>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div id="userSuccessSection" class="hidden center view-in">
+      <div class="success-animation">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+      <h2>Payment successful</h2>
+      <p class="subtitle" style="margin-bottom:0">Your transaction has been verified.</p>
+      <a id="targetLinkBtn" href="#" target="_blank" rel="noopener" class="btn-target" onclick="playClick()">Access your content</a>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+/* ================= UI HELPERS ================= */
+let toastTimer;
+function toast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = (isErr ? 'err ' : '') + 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 2600);
+}
+
+/* ================= WEB AUDIO API (SOUND ENGINE) ================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playClick() {
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+}
+function playSuccessChime() {
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const playTone = (freq, time, dur) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, time);
+    gain.gain.linearRampToValueAtTime(0, time + dur);
+    osc.start(time); osc.stop(time + dur);
+  };
+  const now = audioCtx.currentTime;
+  playTone(523.25, now, 0.15);
+  playTone(659.25, now + 0.1, 0.15);
+  playTone(783.99, now + 0.2, 0.3);
+  playTone(1046.50, now + 0.3, 0.8);
+}
+
+/* ================= CORE LOGIC ================= */
+const FIREBASE_BASE_URL = "https://pementveryfy-default-rtdb.firebaseio.com";
+const urlParams = new URLSearchParams(window.location.search);
+const linkId = urlParams.get('id');
+
+if (linkId) {
+  document.getElementById('userView').classList.remove('hidden');
+  loadPaymentDetails(linkId);
+} else {
+  document.getElementById('adminView').classList.remove('hidden');
+  loadPreviousLinks();
+}
+
+/* ================= ADMIN LOGIC ================= */
+let uploadedQrBase64 = "";
+document.getElementById('adminQrFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    if (file.size > 800 * 1024) {
+      toast("Please upload an image smaller than 800 KB.", true);
+      this.value = ""; return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      uploadedQrBase64 = event.target.result;
+      document.getElementById('adminQrPreview').src = uploadedQrBase64;
+      document.getElementById('adminPreviewBox').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+async function generatePaymentLink() {
+  const amount = document.getElementById('adminAmount').value.trim();
+  const targetUrl = document.getElementById('adminTargetUrl').value.trim();
+  const genBtn = document.getElementById('genBtn');
+  if (!amount || amount <= 0) { toast("Enter a valid amount.", true); return; }
+  if (!targetUrl) { toast("Enter a destination URL.", true); return; }
+  if (!uploadedQrBase64) { toast("Upload a QR code image.", true); return; }
+  genBtn.disabled = true;
+  genBtn.innerText = "Generating…";
+  const newLinkId = "pay_" + Math.random().toString(36).substr(2, 9);
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${newLinkId}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, targetUrl, qrImage: uploadedQrBase64, createdAt: Date.now() })
+    });
+    if (res.ok) {
+      const generatedUrl = `${window.location.origin}${window.location.pathname}?id=${newLinkId}`;
+      document.getElementById('finalGeneratedLink').innerText = generatedUrl;
+      document.getElementById('adminResultBox').style.display = 'block';
+      toast("Payment link created");
+      loadPreviousLinks();
+    }
+  } catch (err) {
+    toast("Network error. Try again.", true);
+  } finally {
+    genBtn.disabled = false;
+    genBtn.innerText = "Generate Payment Link";
+  }
+}
+
+function copyPaymentLink() {
+  navigator.clipboard.writeText(document.getElementById('finalGeneratedLink').innerText);
+  toast("Link copied to clipboard");
+}
+
+async function loadPreviousLinks() {
+  const container = document.getElementById('previousLinksList');
+  container.innerHTML = "<p class='empty'>Loading…</p>";
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links.json`);
+    const data = await res.json();
+    if (!data || Object.keys(data).length === 0) {
+      container.innerHTML = "<p class='empty'>No active links yet. Create your first one above.</p>";
+      return;
+    }
+    container.innerHTML = "";
+    Object.keys(data).reverse().forEach(k => {
+      const item = data[k];
+      const fullLink = `${window.location.origin}${window.location.pathname}?id=${k}`;
+      const itemEl = document.createElement('div');
+      itemEl.className = 'link-item';
+      itemEl.innerHTML = `
+        <img src="${item.qrImage}" alt="QR">
+        <div class="link-info">
+          <div class="amount">₹${item.amount}</div>
+          <div class="target-link">🔗 ${item.targetUrl || 'No Link'}</div>
+        </div>
+        <button class="btn-action btn-copy" onclick="playClick(); navigator.clipboard.writeText('${fullLink}'); toast('Link copied');">Copy</button>
+        <button class="btn-action btn-del" onclick="playClick(); deleteLink('${k}')">Delete</button>
+      `;
+      container.appendChild(itemEl);
+    });
+  } catch (e) { container.innerHTML = "<p class='empty' style='color:var(--bad)'>Couldn't load links. Tap Refresh to retry.</p>"; }
+}
+
+async function deleteLink(id) {
+  if (!confirm("Are you sure you want to permanently delete this link?")) return;
+  await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`, { method: "DELETE" });
+  toast("Link deleted");
+  loadPreviousLinks();
+}
+
+/* ================= USER LOGIC ================= */
+let currentAmount = "0";
+let targetLinkUrl = "";
+let activePaymentKey = "";
+let checkInterval = null;
+
+document.getElementById('userUTR').addEventListener('input', function(){
+  this.value = this.value.replace(/\D/g, '').slice(0, 12);
+});
+
+async function loadPaymentDetails(id) {
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/active_qr_links/${id}.json`);
+    const data = await res.json();
+    if (data && data.qrImage) {
+      currentAmount = data.amount;
+      targetLinkUrl = data.targetUrl || "#";
+      document.getElementById('userDisplayAmount').innerText = currentAmount;
+      document.getElementById('userDisplayQR').src = data.qrImage;
+      document.getElementById('targetLinkBtn').href = targetLinkUrl;
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('userPaymentFormSection').classList.remove('hidden');
+    } else {
+      document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--bad);font-weight:600;padding:20px 0'>This payment link has expired or is invalid.</p>";
+    }
+  } catch (e) {
+    document.getElementById('loadingScreen').innerHTML = "<p style='color:var(--bad);padding:20px 0'>Couldn't load this page. Check your connection and refresh.</p>";
+  }
+}
+
+document.getElementById('userPaymentForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('userEmail').value.trim();
+  const utr = document.getElementById('userUTR').value.trim();
+  const submitBtn = document.getElementById('userSubmitBtn');
+  if (!/^\d{12}$/.test(utr)) { toast("Enter a valid 12-digit UTR number.", true); return; }
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Processing securely…";
+  try {
+    const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, utr, amount: currentAmount, status: "PENDING", timestamp: Date.now() })
+    });
+    const data = await res.json();
+    if (res.ok && data.name) {
+      activePaymentKey = data.name;
+      document.getElementById('logEmail').innerText = email;
+      document.getElementById('logUTR').innerText = utr;
+      document.getElementById('userPaymentFormSection').classList.add('hidden');
+      document.getElementById('userWaitingSection').classList.remove('hidden');
+      startStepAnimation();
+      startPaymentPolling(activePaymentKey);
+    }
+  } catch (err) {
+    toast("Network error. Please try again.", true);
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Verify Payment";
+  }
+});
+
+/* Visual progress only: real result still comes from the polling below */
+function startStepAnimation(){
+  const li = document.querySelectorAll('#verifySteps li');
+  setTimeout(() => { li[1].className = 'done'; li[2].className = 'active'; }, 6000);
+}
+
+function startPaymentPolling(key) {
+  checkInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${FIREBASE_BASE_URL}/pending_payments/${key}.json`);
+      const data = await res.json();
+      if (data && data.status === "SUCCESS") {
+        clearInterval(checkInterval);
+        playSuccessChime();
+        document.getElementById('userWaitingSection').classList.add('hidden');
+        document.getElementById('userSuccessSection').classList.remove('hidden');
+      }
+    } catch (e) { console.error("Polling error", e); }
+  }, 3000);
+}
+</script>
+</body>
+</html>
